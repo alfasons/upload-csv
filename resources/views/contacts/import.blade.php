@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="{{ csrf_token() }}"> <!-- Include the CSRF token meta tag here -->
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <title>Import Contacts</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
@@ -34,41 +34,55 @@
                     </div>
                     <!-- Step 2: Map Columns -->
                     <div class="import-step" id="step2" style="display: none;">
-                        <H4>Map Columns</H4>
+                        <h4>Map Columns</h4>
                         <div class="table table-responsive">
                             <form id="mappingForm">
-                                <input type="hidden" name="filePath" id="filePath">
+                            <!--    <input type="hidden" name="filePath" id="filePath">-->
                                 <table class="table">
                                     <thead>
                                         <tr id="csvHeaders"></tr>
                                     </thead>
                                     <tbody id="csvPreview"></tbody>
                                 </table>
-                                <button type="submit" class="btn btn-success">Import</button>
+                                <button type="button" id="toStep3" class="btn btn-success">Next</button>
                             </form>
                         </div>
-
+                    </div>
+                    <!-- Step 3: Additional Fields -->
+                    <div class="import-step" id="step3" style="display: none;">
+                        <h4>Add Details</h4>
+                        <form id="detailsForm">
+                            <input type="hidden" name="filePath" id="filePath">
+                            <div class="form-group">
+                                <label for="field1">Field 1</label>
+                                <input type="text" class="form-control" id="field1" name="field1" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="field2">Field 2</label>
+                                <input type="text" class="form-control" id="field2" name="field2" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="field3">Field 3</label>
+                                <input type="text" class="form-control" id="field3" name="field3" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Complete</button>
+                        </form>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
- <!-- Your content goes here -->
 
-    <!-- jQuery -->
-    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
-
-    <!-- Popper.js -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
-
-    <!-- Bootstrap JS -->
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+<!-- jQuery, Popper.js, Bootstrap JS -->
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
 
 <script>
 $(document).ready(function() {
-     // Set up AJAX headers with CSRF token
-     $.ajaxSetup({
+    // Set up AJAX headers with CSRF token
+    $.ajaxSetup({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
         }
@@ -111,6 +125,59 @@ $(document).ready(function() {
             }
         });
     });
+
+    $('#toStep3').click(function() {
+        $('#step2').hide();
+        $('#step3').show();
+    });
+
+    // Function to serialize FormData into a URL-encoded string
+function serializeFormData(formData) {
+    const params = new URLSearchParams();
+    for (const [key, value] of formData.entries()) {
+        params.append(key, value);
+    }
+    return params.toString();
+}
+
+    $('#detailsForm').submit(function(e) {
+        e.preventDefault();
+       // Initialize FormData with the form element
+       var formData = new FormData(this);
+    // Loop through each select element in the column mapping and add their values to formData
+    $('.column-mapping').each(function() {
+        var selectedValue = $(this).val();
+        var name = $(this).attr('name');
+        formData.append(name, selectedValue);
+        console.log('Appending to formData:', name, '=', selectedValue);
+    });
+
+    // Serialize FormData
+    var serializedData = serializeFormData(formData);
+    console.log(serializedData);
+
+$.ajax({
+    type: 'POST',
+    url: '{{ route("contacts.completeImport") }}', // Adjust the URL as necessary
+    data: serializedData,
+  
+            success: function(response) {
+                $('#importModal').modal('hide');
+              //  alert('Import completed successfully!');
+                // Reset and prepare for next import
+                $('#uploadForm')[0].reset();
+                $('#mappingForm')[0].reset();
+                $('#detailsForm')[0].reset();
+                $('#step3').hide();
+                $('#step1').show();
+            },
+            error: function(xhr, status, error) {
+                console.error(xhr.responseText);
+            }
+        });
+    });
+
+    // Any additional JavaScript logic required
      // Function to update dropdown options based on selections
      function updateDropdowns() {
         // First, enable all options
@@ -128,28 +195,6 @@ $(document).ready(function() {
     // Call updateDropdowns whenever any dropdown changes
     $(document).on('change', '.column-mapping', function() {
         updateDropdowns();
-    });
-
-    $('#mappingForm').submit(function(e) {
-        e.preventDefault();
-        var formData = $(this).serialize();
-        $.ajax({
-            type: 'POST',
-            url: '{{ route("contacts.processMapping") }}',
-            data: formData,
-            success: function(response) {
-                $('#importModal').modal('hide');
-                alert('Contacts imported successfully!');
-                // Reset and prepare for next import if necessary
-                $('#uploadForm')[0].reset();
-                $('#mappingForm')[0].reset();
-                $('#step2').hide();
-                $('#step1').show();
-            },
-            error: function(xhr, status, error) {
-                console.error(xhr.responseText);
-            }
-        });
     });
 });
 </script>

@@ -22,5 +22,7 @@ Route::get('/', function () {
 Route::get('/contacts/import', [ContactController::class, 'showImportForm'])->name('contacts.import');
 Route::post('/contacts/upload', [ContactController::class, 'uploadCsv'])->name('contacts.upload');
 Route::post('/contacts/process-mapping', [ContactController::class, 'processMapping'])->name('contacts.processMapping');
+Route::post('/contacts/complete-import', [ContactController::class, 'completeImport'])->name('contacts.completeImport');
+
 
 

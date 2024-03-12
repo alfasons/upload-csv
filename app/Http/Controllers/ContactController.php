@@ -1,8 +1,10 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Models\Contact;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 
@@ -55,6 +57,33 @@ class ContactController extends Controller
                     $rowData[$mapping[$header]] = $row[$key];
                 }
             }
+            Contact::create($rowData);
+        }
+        fclose($file);
+
+        Storage::delete($request->filePath);
+
+        return redirect()->route('contacts.import')->with('success', 'Contacts imported successfully with mapping.');
+    }
+    public function completeImport(Request $request)
+    {
+        Log::info('uuuuu');
+        Log::info('Import Request:', $request->all());
+       // echo print_r($request,true);
+        $mapping = $request->mapping;
+        $filePath = storage_path('app/' . $request->filePath);
+
+        $file = fopen($filePath, 'r');
+        $headers = fgetcsv($file);
+
+        while (($row = fgetcsv($file)) !== FALSE) {
+            $rowData = [];
+            foreach ($headers as $key => $header) {
+                if (!empty($mapping[$header])) {
+                    $rowData[$mapping[$header]] = $row[$key];
+                }
+            }
+            Log::info('Import Request:', $rowData);
             Contact::create($rowData);
         }
         fclose($file);
