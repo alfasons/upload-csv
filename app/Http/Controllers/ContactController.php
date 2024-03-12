@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Contact;
+use App\Models\ContactList;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
@@ -13,8 +14,12 @@ class ContactController extends Controller
     public function showImportForm()
     {
         // Get database columns for the 'contacts' table
-        $dbColumns = Schema::getColumnListing('contacts');
-        return view('contacts.import', compact('dbColumns'));
+        //$dbColumns = Schema::getColumnListing('contacts');
+        $dbColumns = ['first_name', 'last_name', 'email','number','address','extra','city','state','zip','owner_first_name','owner_last_name']; // Replace 'column1', 'column2', 'column3' with your actual column names
+        $contacts = ContactList::all(); // Assuming you have a Contact model
+        $tags = [['id'=>1,'name'=>'today']]; //Tag::all(); // Assuming you have a Tag model
+
+        return view('contacts.import', compact('dbColumns','contacts','tags'));
     }
 
     public function uploadCsv(Request $request)
